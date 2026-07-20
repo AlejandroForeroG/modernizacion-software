@@ -46,3 +46,12 @@ out/
 _site/
 *.css
 !petclinic.css
+
+### Pre-experiment workspace ###
+tmp/
+docs/
+modernized-ui/node_modules/
+modernized-ui/dist/
+modernized-ui/test-results/
+modernized-ui/playwright-report/
+!modernized-ui/src/**/*.css
