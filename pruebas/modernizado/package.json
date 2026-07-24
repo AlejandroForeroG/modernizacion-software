@@ -1,0 +1,12 @@
+{
+  "name": "petclinic-frontend-stress-test-modernizado",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prueba de estres de frontend con Playwright para Spring PetClinic Modernizado (React)",
+  "scripts": {
+    "test:stress": "node playwright_stress_test_modernizado.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}

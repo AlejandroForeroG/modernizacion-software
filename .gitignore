@@ -63,3 +63,7 @@ modernized-ui/playwright-report/
 CLAUDE.md
 CLAUDE.local.md
 **/CLAUDE.md
+
+### Pruebas de carga (JMeter/Playwright) ###
+pruebas/**/node_modules/
+pruebas/**/*.log
