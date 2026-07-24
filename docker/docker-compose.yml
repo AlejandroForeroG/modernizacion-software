@@ -1,0 +1,54 @@
+services:
+  postgres:
+    build:
+      context: ./postgres
+    container_name: petclinic-postgres
+    environment:
+      POSTGRES_USER: petclinic
+      POSTGRES_PASSWORD: petclinic
+      POSTGRES_DB: petclinic
+    ports:
+      - "5432:5432"
+    volumes:
+      - petclinic-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petclinic -d petclinic"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: petclinic-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/petclinic
+      POSTGRES_USER: petclinic
+      POSTGRES_PASS: petclinic
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/frontend/Dockerfile
+    container_name: petclinic-web
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "5174:80"
+
+volumes:
+  petclinic-postgres-data:

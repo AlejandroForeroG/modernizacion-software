@@ -1,0 +1,13 @@
+.git
+documentación
+k8s
+.devcontainer
+.gitpod.yml
+*.md
+.idea
+*.iml
+target
+modernized-ui/node_modules
+modernized-ui/dist
+modernized-ui/test-results
+modernized-ui/playwright-report
