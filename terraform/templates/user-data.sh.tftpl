@@ -1,0 +1,67 @@
+#!/bin/bash
+set -euxo pipefail
+exec > >(tee /var/log/petclinic-user-data.log) 2>&1
+
+# source_hash=${source_hash} (unused; changes here force EC2 replacement on new code)
+
+dnf install -y docker unzip jq
+systemctl enable --now docker
+usermod -aG docker ec2-user
+
+mkdir -p /usr/libexec/docker/cli-plugins
+
+curl -sSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+# Compose v2's `up/build --build` hard-requires the buildx plugin (>= 0.17) —
+# not bundled by the AL2023 "docker" package, unlike Docker Desktop.
+BUILDX_VERSION=$(curl -sSL https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name)
+curl -sSL "https://github.com/docker/buildx/releases/download/$${BUILDX_VERSION}/buildx-$${BUILDX_VERSION}.linux-amd64" \
+  -o /usr/libexec/docker/cli-plugins/docker-buildx
+chmod +x /usr/libexec/docker/cli-plugins/docker-buildx
+
+mkdir -p /opt/petclinic
+aws s3 cp "s3://${artifact_bucket}/${artifact_key}" /opt/app-source.zip --region ${region}
+unzip -o /opt/app-source.zip -d /opt/petclinic
+chmod +x /opt/petclinic/mvnw
+
+cat > /opt/petclinic/.env <<'ENV'
+POSTGRES_URL=jdbc:postgresql://${db_endpoint}:${db_port}/${db_name}
+POSTGRES_USER=${db_username}
+POSTGRES_PASS=${db_password}
+CORS_ALLOWED_ORIGIN=${cors_origin}
+AWS_REGION=${region}
+LOG_GROUP=${log_group}
+ENV
+
+cd /opt/petclinic
+docker compose -f docker/docker-compose.aws.yml --env-file .env up -d --build
+
+# --- Frontend: build with the backend's public URL baked in, publish to S3 ---
+docker build --target build -f docker/frontend/Dockerfile \
+  --build-arg VITE_API_BASE=${backend_url} \
+  -t petclinic-frontend-build .
+docker create --name fe-extract petclinic-frontend-build
+rm -rf /opt/petclinic-frontend-dist
+docker cp fe-extract:/app/dist /opt/petclinic-frontend-dist
+docker rm -f fe-extract
+aws s3 sync /opt/petclinic-frontend-dist "s3://${frontend_bucket}/" --delete --region ${region}
+
+# --- CloudWatch Agent: host metrics not covered by default EC2 monitoring ---
+dnf install -y amazon-cloudwatch-agent
+cat > /tmp/cw-agent-config.json <<'JSON'
+{
+  "metrics": {
+    "namespace": "PetClinic",
+    "metrics_collected": {
+      "mem": { "measurement": ["mem_used_percent"] },
+      "disk": { "measurement": ["used_percent"], "resources": ["/"] }
+    }
+  }
+}
+JSON
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -s -c file:/tmp/cw-agent-config.json
+
+echo "petclinic user-data finished at $(date -u)"

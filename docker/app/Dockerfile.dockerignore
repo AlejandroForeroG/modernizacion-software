@@ -1,0 +1,10 @@
+.git
+documentación
+modernized-ui
+k8s
+.devcontainer
+.gitpod.yml
+*.md
+.idea
+*.iml
+target

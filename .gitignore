@@ -55,3 +55,11 @@ modernized-ui/dist/
 modernized-ui/test-results/
 modernized-ui/playwright-report/
 !modernized-ui/src/**/*.css
+
+### Claude Code ###
+.claude/
+.claude.json
+.claude.json.backup
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md

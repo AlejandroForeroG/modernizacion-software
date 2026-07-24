@@ -1,0 +1,24 @@
+# Copy to terraform.tfvars and adjust if needed. All values below are the
+# defaults already baked into variables.tf — this file only documents them.
+
+# aws_profile = "modernizacion"
+# region      = "us-east-1"
+
+# instance_type = "t3.medium"
+# key_name      = "vockey"
+
+# AWS Academy Learner Lab: cannot create IAM resources, must reference the
+# pre-provisioned instance profile. Confirm the exact name with:
+#   aws iam list-instance-profiles --profile modernizacion
+# iam_instance_profile = "LabInstanceProfile"
+
+# Restrict this to your own IP (e.g. "203.0.113.10/32") if you want SSH access
+# locked down; 0.0.0.0/0 is the default so the script "just works".
+# ssh_ingress_cidr = "0.0.0.0/0"
+
+# db_name     = "petclinic"
+# db_username = "petclinic"
+
+# Set to receive CloudWatch alarm emails via SNS. Leave commented/empty to
+# skip creating any SNS resources.
+# alert_email = "you@example.com"

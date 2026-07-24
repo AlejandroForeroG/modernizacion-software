@@ -26,6 +26,11 @@ const SPECIES = {
 
 const initialSearch = { owners: [], page: 0, size: 5, totalElements: 0, totalPages: 0 }
 
+// Empty string keeps same-origin relative paths (dev proxy, docker-compose local
+// stack). Set at build time (VITE_API_BASE) when the frontend is hosted apart
+// from the backend, e.g. the S3 static deployment.
+const API_BASE = import.meta.env.VITE_API_BASE ?? ''
+
 function tomorrow() {
   const date = new Date()
   date.setDate(date.getDate() + 1)
@@ -62,7 +67,7 @@ function App() {
     setLoading(true)
     setNotice(null)
     try {
-      const result = await api(`/api/owners?lastName=${encodeURIComponent(lastName)}&page=${page}&size=5`)
+      const result = await api(`${API_BASE}/api/owners?lastName=${encodeURIComponent(lastName)}&page=${page}&size=5`)
       setSearch(result)
       if (result.totalElements === 1) {
         await selectOwner(result.owners[0].id)
@@ -80,7 +85,7 @@ function App() {
     setLoading(true)
     setNotice(null)
     try {
-      setSelected(await api(`/api/owners/${id}`))
+      setSelected(await api(`${API_BASE}/api/owners/${id}`))
     } catch (error) {
       setNotice({ type: 'error', message: error.message })
     } finally {
@@ -92,11 +97,11 @@ function App() {
     setLoading(true)
     setNotice(null)
     try {
-      await api(`/api/owners/${selected.id}/pets/${petId}/visits`, {
+      await api(`${API_BASE}/api/owners/${selected.id}/pets/${petId}/visits`, {
         method: 'POST',
         body: JSON.stringify(visit),
       })
-      setSelected(await api(`/api/owners/${selected.id}`))
+      setSelected(await api(`${API_BASE}/api/owners/${selected.id}`))
       setNotice({ type: 'success', message: 'Visita registrada y agregada al historial.' })
     } catch (error) {
       setNotice({ type: 'error', message: error.message })
@@ -120,7 +125,7 @@ function App() {
             PetClinic<span>Atención clínica</span>
           </a>
           <nav aria-label="Canales de la aplicación">
-            <a className="channel" href="/owners/find" target="_blank" rel="noreferrer">
+            <a className="channel" href={`${API_BASE}/owners/find`} target="_blank" rel="noreferrer">
               Vista legada <ExternalLink size={13} />
             </a>
           </nav>
